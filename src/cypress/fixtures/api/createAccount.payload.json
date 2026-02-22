@@ -1,0 +1,19 @@
+{
+    "name": "Renata",
+    "email": "__DYNAMIC__",
+    "password": "123456",
+    "title": "Mrs",
+    "birth_date": "10",
+    "birth_month": "02",
+    "birth_year": "1995",
+    "firstname": "Renata",
+    "lastname": "Santos",
+    "company": "PortWeb",
+    "address1": "Rua A, 123",
+    "address2": "Apto 10",
+    "country": "Brazil",
+    "zipcode": "12345",
+    "state": "SP",
+    "city": "São Paulo",
+    "mobile_number": "11999999999"
+  }

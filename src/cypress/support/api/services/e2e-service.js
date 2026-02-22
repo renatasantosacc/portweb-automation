@@ -107,7 +107,32 @@ const elements = {
       })
     })
 
-  }
+   }
+
+    requisicaoEndpointComLogin(metodo,endpoint,email,password) {
+      return cy.request({
+        method: metodo,
+        url: `https://automationexercise.com/api${endpoint}`,
+        failOnStatusCode: false,
+        form: true,
+        body: { email, password },
+      }).as('productsListResponse')
+    }
+
+  
+    criarConta(payload) {
+      return cy.request({
+        method: "POST",
+        url: "https://automationexercise.com/api/createAccount",
+        failOnStatusCode: false,
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        form: true,
+        body: payload,
+      }).as("productsListResponse")
+    }
 
 }
+
 export default new metodos();
