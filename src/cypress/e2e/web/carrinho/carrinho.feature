@@ -21,5 +21,5 @@ Funcionalidade: Carrinho de compras
       E escolher o produto "Stylish Dress"
       Então o produto será adicionado ao carrinho
       E a aplicação será direcionada para o carrinho de compras
-      E o produto "Stylish Dress" será removido do carrinho
+      E o produto "teste erro" será removido do carrinho
       
