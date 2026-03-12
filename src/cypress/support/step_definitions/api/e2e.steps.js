@@ -4,8 +4,8 @@ let payload
 
 
 Given('que eu faça uma requisição {string} para o endpoint {string}', (metodo,endpoint) => {
-    e2e.requisicaoEndpoint(metodo,endpoint)
- })  
+      e2e.requisicaoEndpoint(metodo, endpoint)  
+})  
 
 Then('o status HTTP da resposta deve ser {int}', (statusCode) => {
     e2e.validateStatusCode(statusCode)
@@ -44,11 +44,39 @@ Given('que eu faça uma requisição {string} para o endpoint {string} com o use
 })
 
 Given('que eu tenha os dados válidos para criar uma conta', () => {
-  cy.log(JSON.stringify(payload))
-  cy.fixture("api/createAccount.payload.json").then((base) => {
-    payload = {
-      ...base, // spread: pega todas as chaves e valores do objeto base e os inclui no novo objeto payload
-      email: `renata_${Date.now()}@test.com` // Gera um email único usando o timestamp atual para evitar conflitos de email já existente.
-    }
-      })
+    e2e.criarCadastro()
+})
+
+Given('que eu faça uma requisição {string} para o endpoint {string} com o payload {string}',(metodo, endpoint, payloadAlias) => {
+    cy.get(`@${payloadAlias}`).then((payload) => {
+
+      const updatedPayload = {
+        ...payload,
+        company: 'Empresa Atualizada',
+        city: 'Rio de Janeiro'
+      }
+      cy.wrap(updatedPayload, { log: false }).as('updatedAccountPayload')
+      e2e.requisicaoEndpoint(metodo, endpoint, updatedPayload)
+    })
+  }
+)
+
+When('que eu consulte os dados do usuário atualizado', () => {
+    e2e.consultarDadosUsuario('createAccountPayload')
+})
+
+Then('o campo {string} deve ser {string}', (campo, valorEsperado) => {
+    e2e.validarCampoUsuario(campo, valorEsperado)
+})
+
+When('deletar o usuario cadastrado', () => {
+  e2e.deletarCadastro('createAccountPayload')
+})
+
+When('eu consultar os detalhes do usuário cadastrado', () => {
+  e2e.consultarDadosUsuario('createAccountPayload')
+})
+
+Then('a resposta deve conter os detalhes do usuário cadastrado', () => {
+    e2e.validarDetalhesUsuario('createAccountPayload')
 })

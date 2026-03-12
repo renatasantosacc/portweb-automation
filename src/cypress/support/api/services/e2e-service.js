@@ -4,16 +4,24 @@ const elements = {
 
     class metodos {
 
-    requisicaoEndpoint(metodo,endpoint) {
-            return cy.request({
-              method: metodo,
-              url: `https://automationexercise.com/api${endpoint}`,
-              failOnStatusCode: false, // se o status for 400/500 o teste falha, mas queremos validar isso, então desabilitamos essa falha automática
-            }).as('productsListResponse')
-          }
-        
+      requisicaoEndpoint(metodo, endpoint, body) {
+        const method = metodo.toUpperCase()
+      
+        const options = {
+          method,
+          url: `https://automationexercise.com/api${endpoint}`,
+          failOnStatusCode: false, // se o status for 400/500 o teste falha, mas queremos validar isso, então desabilitamos essa falha automática
+        }
+      
+          if (body && method !== 'GET') { // só inclui o body se ele for fornecido e se o método não for GET, já que GET normalmente não tem body. 
+          options.form = true
+          options.body = body
+        }
+          return cy.request(options).as('apiResponse')
+      }
+
     validateStatusCode(statusCode){
-          cy.get('@productsListResponse').its('status').should('eq', statusCode) // valida o status da resposta, garantindo que é o esperado (200, 400)
+          cy.get('@apiResponse').its('status').should('eq', statusCode) // valida o status da resposta, garantindo que é o esperado (200, 400)
         }
 
     parseBody(body) {
@@ -25,7 +33,7 @@ const elements = {
           }
           
     validateProductsList() {
-            cy.get('@productsListResponse').then((response) => {
+            cy.get('@apiResponse').then((response) => {
               const body = this.parseBody(response.body) // garante que tem um objeto, seja ele string ou já como objeto. 
           
               expect(body).to.have.property('products') // garante que o body tem a propriedade products
@@ -34,7 +42,7 @@ const elements = {
           }
           
     validateProductAttributes() {
-            cy.get('@productsListResponse').then((response) => {
+            cy.get('@apiResponse').then((response) => {
               const body = this.parseBody(response.body)
           
               expect(body).to.have.property('products')
@@ -52,7 +60,7 @@ const elements = {
     }
 
     validateResponseCode(responseCode) {
-      cy.get('@productsListResponse').then((response) => {
+      cy.get('@apiResponse').then((response) => {
         const body = this.parseBody(response.body)
 
         expect(body).to.have.property('responseCode')
@@ -61,7 +69,7 @@ const elements = {
     }
 
     validateMensagem(mensagemEsperada) {
-      cy.get('@productsListResponse').then((response) => {
+      cy.get('@apiResponse').then((response) => {
         const body = this.parseBody(response.body)
     
         expect(body).to.have.property('message')
@@ -70,7 +78,7 @@ const elements = {
     }
 
     validateMarcasList() {
-      cy.get('@productsListResponse').then((response) => {
+      cy.get('@apiResponse').then((response) => {
         const body = this.parseBody(response.body)
     
         expect(body).to.have.property('brands')
@@ -83,13 +91,13 @@ const elements = {
         method: metodo,
         url: `https://automationexercise.com/api${endpoint}`,
         failOnStatusCode: false,
-        form: true,
-        body: { search_product: productName },
-      }).as('productsListResponse') 
+        form: true, // indica que o body deve ser enviado como form data (application/x-www-form-urlencoded) em vez de JSON, o que é comum em endpoints de busca ou pesquisa.
+        body: { search_product: productName }, // envia o nome do produto como parte do corpo da requisição, usando a chave 'search_product' que é esperada pelo endpoint de pesquisa para filtrar os produtos com base nesse termo.
+      }).as('apiResponse') 
     }
 
     validateProdutosPesquisa(productName) {
-      cy.get('@productsListResponse').then((response) => {
+      cy.get('@apiResponse').then((response) => {
         const body = this.parseBody(response.body)
     
         expect(body).to.have.property('products')
@@ -97,7 +105,7 @@ const elements = {
     
         const productNameLower = productName.toLowerCase()
 
-        body.products.forEach((p) => {
+        body.products.forEach((p) => { // percorre cada produto retornado na resposta e valida se o nome ou a categoria do produto inclui o termo de pesquisa, garantindo que os resultados da pesquisa são relevantes para o termo fornecido.
           const name = (p.name || '').toLowerCase()
           const category = (p.category?.category || '').toLowerCase()
           expect(
@@ -116,21 +124,64 @@ const elements = {
         failOnStatusCode: false,
         form: true,
         body: { email, password },
-      }).as('productsListResponse')
+      }).as('apiResponse')
     }
 
   
-    criarConta(payload) {
-      return cy.request({
-        method: "POST",
-        url: "https://automationexercise.com/api/createAccount",
-        failOnStatusCode: false,
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        form: true,
-        body: payload,
-      }).as("productsListResponse")
+    criarCadastro() {
+     cy.fixture("api/createAccount.payload.json").then((base) => {
+      const payload = {
+         ...base, // spread: pega todas as chaves e valores do objeto base e os inclui no novo objeto payload
+         email: `renat_${Date.now()}@test.com`, // Gera um email único usando o timestamp atual para evitar conflitos de email já existente.
+         name: base.name || `${base.firstname} ${base.lastname}` // garantia extra para o campo name, caso o fixture não tenha a chave 'name', ele tenta construir usando 'firstname' e 'lastname'.
+        }
+        cy.wrap(payload, { log: false }).as('createAccountPayload') // armazena o payload criado como um alias para ser usado posteriormente nos testes, evitando que o email seja exposto nos logs do Cypress.
+      })
+    }
+
+    consultarDadosUsuario(payloadAlias = 'createAccountPayload') {
+      cy.get(`@${payloadAlias}`).then((payload) => { 
+        
+        const email = encodeURIComponent(payload.email) // encodeURIComponent é usado para garantir que o email seja formatado corretamente para ser incluído na URL, evitando problemas com caracteres especiais.
+       
+        this.requisicaoEndpoint('GET', `/getUserDetailByEmail?email=${email}`) // faz a requisição para o endpoint de consulta de usuário, passando o email como query parameter para obter os detalhes do usuário criado ou atualizado.
+      })
+    }
+
+    validarCampoUsuario(campo, valorEsperado) {
+      cy.get('@apiResponse').then((response) => {
+
+        const body = this.parseBody(response.body)
+    
+        expect(body).to.have.property('user')
+        expect(body.user).to.have.property(campo)
+        expect(body.user[campo]).to.eq(valorEsperado)
+      })
+    }
+
+    deletarCadastro(payloadAlias = 'createAccountPayload') {
+      cy.get(`@${payloadAlias}`).then((payload) => { 
+        
+        const deleteBody = {
+          email: payload.email,
+          password: payload.password,
+        }
+    
+        this.requisicaoEndpoint('DELETE', '/deleteAccount', deleteBody)
+      })
+    }
+
+    validarDetalhesUsuario(payloadAlias = 'createAccountPayload') {
+      cy.get(`@${payloadAlias}`).then((payload) => {
+        cy.get('@apiResponse').then((response) => {
+
+          const body = this.parseBody(response.body)
+    
+          expect(body).to.have.property('user')
+          expect(body.user.email).to.eq(payload.email)
+          expect(body.user.name).to.eq(payload.name)
+        })
+      })
     }
 
 }
