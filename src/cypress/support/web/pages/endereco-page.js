@@ -2,7 +2,6 @@
 const elements = {
     enderecoEntregaBox: '#address_delivery',
     enderecoCobrancaBox: '#address_invoice',
-
     nomeCompleto: 'li.address_firstname.address_lastname',
     empresa: 'li.address_address1.address_address2',
     cidadeEstadoCep: 'li.address_city.address_state_name.address_postcode',

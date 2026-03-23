@@ -1,6 +1,6 @@
 
 const elements = {
-    loginPageButton: 'a[href="/login"]',
+    loginPageButton: 'a[href="/login"]', 
     loginEmail: 'input[data-qa="login-email"]',
     loginPassword: 'input[data-qa="login-password"]',
     loginButton: 'button[data-qa="login-button"]',
@@ -8,7 +8,9 @@ const elements = {
     signupEmail: 'input[data-qa="signup-email"]',
     signupButton: 'button[data-qa="signup-button"]',
     logoutButton: 'a[href="/logout"]',
-    deleteAccountButton: 'a[href="/delete_account"]'
+    deleteAccountButton: 'a[href="/delete_account"]',
+    contatoButton: 'a[href="/contact_us"]'
+
   }
   
   class Metodos {
@@ -58,7 +60,13 @@ const elements = {
       cy.contains('Logged in as').should('be.visible')
     } 
 
-    
+    clicarBotaoContato() {
+      cy.get(elements.contatoButton).click()
+      cy.url().should('eq', 'https://automationexercise.com/contact_us')
+      cy.title().should('eq', 'Automation Exercise - Contact Us')
+      cy.contains('Get In Touch').should('be.visible')
+    }
+
 
   }
   

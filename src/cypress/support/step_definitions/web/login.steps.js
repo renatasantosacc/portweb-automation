@@ -40,3 +40,7 @@ When('excluir a conta cadastrada', () => {
 Then('verifico se estou logada na conta criada', () => {
   login.validarLoginContaCriada()
 })  
+
+When('clico no botão de contato', () => {
+  login.clicarBotaoContato()  
+})
